@@ -164,7 +164,7 @@ def load_off(path):
 def load_ply_points(pc_filepath, expected_point=2000):
     fopen = open(pc_filepath, 'r', encoding='utf-8')
     lines = fopen.readlines()
-    pts = np.zeros((expected_point, 3), np.float64)
+    pts = np.zeros((int(expected_point), 3), np.float64)
 
     total_point = 0
     feed_point_count = 0
@@ -184,8 +184,8 @@ def load_ply_points(pc_filepath, expected_point=2000):
 
         if word[0] == 'end_header':
             start_point_data = True
-
-        if feed_point_count >= expected_point:
+   
+        if feed_point_count >= int(expected_point):
             break
 
     fopen.close()
