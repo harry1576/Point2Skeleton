@@ -1,4 +1,7 @@
 data/*.ply
 data/*.txt
 weights/*.pth
+data/renders/*
+data/*
 *.pyc
+results/*

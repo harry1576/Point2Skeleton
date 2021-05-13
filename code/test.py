@@ -62,7 +62,6 @@ def output_results(log_path, batch_id, input_xyz, skel_xyz, skel_r, skel_faces, 
         # dense_skel_sphere = util.rand_sample_points_on_skeleton_mesh(skel_xyz_save[i], skel_faces[i], skel_edges[i], skel_r_save[i], 10000)
         # rw.save_spheres(dense_skel_sphere[:,0:3], dense_skel_sphere[:,3,None], save_name_sphere)
 
-
 if __name__ == "__main__":
     #parse arguments
     args = parse_args()
@@ -111,9 +110,13 @@ if __name__ == "__main__":
             batch_pc, compute_graph=True)
         skel_node_features = torch.cat([shape_features, skel_xyz, skel_r], 2)
 
+        
         # get predicted mesh
         A_pred = model_gae(skel_node_features, A_init)
         A_final = model_gae.recover_A(A_pred, valid_mask)
+
+        #print(sample_xyz)
+        #print(sample_xyz.shape)
 
         skel_faces, skel_edges, A_mesh = util.generate_skel_mesh(batch_pc, skel_xyz, A_init, A_final)
         skel_r = util.refine_radius_by_mesh(skel_xyz, skel_r, sample_xyz, weights, skel_faces, skel_edges)

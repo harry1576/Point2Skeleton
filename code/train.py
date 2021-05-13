@@ -95,20 +95,20 @@ if __name__ == "__main__":
 
     #intialize networks
     model_skel = SkelPointNet(num_skel_points=skelpoint_num, input_channels=0, use_xyz=True)
-    model_gae = LinkPredNet()
+    #model_gae = LinkPredNet()
     optimizer_skel = torch.optim.Adam(model_skel.parameters(), lr=conf.LR_SPN)
-    optimizer_gae = torch.optim.Adam(model_gae.parameters(), lr=conf.LR_GAE)
+    #optimizer_gae = torch.optim.Adam(model_gae.parameters(), lr=conf.LR_GAE)
 
     TIMESTAMP = "{0:%Y-%m-%dT%H-%M-%S/}".format(datetime.now())
     tb_writer = SummaryWriter(save_log_path + TIMESTAMP)
-
+    
     if torch.cuda.is_available():
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu
         print("GPU Number:", torch.cuda.device_count(), "GPUs!")
         model_skel.cuda()
         model_skel.train(mode=True)
-        model_gae.cuda()
-        model_gae.train(mode=True)
+        #model_gae.cuda()
+        #model_gae.train(mode=True)
     else:
         print("No CUDA detected.")
         sys.exit(0)
@@ -129,10 +129,32 @@ if __name__ == "__main__":
             batch_id, batch_pc = batch_data
             batch_id = batch_id
             batch_pc = batch_pc.cuda().float()
+
+
+            if epoch < conf.EPOCH:
+
+                print('######### Training #########')
+                skel_xyz, skel_r, shape_features = model_skel(batch_pc, compute_graph=False)
+                loss_pre = model_skel.compute_loss_pre(batch_pc, skel_xyz)
+
+                optimizer_skel.zero_grad()
+                loss_pre.backward()
+                optimizer_skel.step()
+
+                tb_writer.add_scalar('SkeletonPoint/loss_pre', loss_pre.item(), iter)
+                if iter % save_result_iter == 0:
+                    output_results(save_result_path, batch_id, epoch, batch_pc, skel_xyz, skel_r)
+                if iter % save_net_iter == 0:
+                    torch.save(model_skel.state_dict(), save_net_path + 'weights-skelpoint-pre.pth')
+
+
+
+
             
             ######################################
             # pre-train skeletal point network
             ######################################
+            """
             if epoch < conf.PRE_TRAIN_EPOCH:
                 print('######### pre-training #########')
                 skel_xyz, skel_r, shape_features = model_skel(batch_pc, compute_graph=False)
@@ -165,10 +187,11 @@ if __name__ == "__main__":
                     output_results(save_result_path, batch_id, epoch, batch_pc, skel_xyz, skel_r)
                 if iter % save_net_iter == 0:
                     torch.save(model_skel.state_dict(), save_net_path + 'weights-skelpoint.pth')
-
+            """
             ######################################
             # train GAE
             ######################################
+            """
             else:
                 print('######### GAE training #########')
 
@@ -185,7 +208,7 @@ if __name__ == "__main__":
                 # train GAE
                 A_pred = model_gae(skel_node_features, A_init)
                 loss_MBCE = model_gae.compute_loss(A_pred, A_init, known_mask.detach())
-                optimizer_gae.zero_grad()
+                optimizer_gae.zero_grad()s
                 loss_MBCE.backward()
                 optimizer_gae.step()
 
@@ -197,7 +220,7 @@ if __name__ == "__main__":
                     torch.save(model_gae.state_dict(), save_net_path + 'weights-gae.pth')
                 tb_writer.add_scalar('GAE/loss_MBCE', loss_MBCE.item(), iter)
             
-            
+            """
             '''
             ######################################
             # Train two networks jointly

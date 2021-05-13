@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "/local/miniconda3/envs/p2skel/bin/python",
+    "python.languageServer": "Pylance"
+}
