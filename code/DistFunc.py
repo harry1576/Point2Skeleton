@@ -67,6 +67,7 @@ def closest_distance_with_batch(p1, p2, is_sum=True):
     dist = torch.add(p1, torch.neg(p2))
     dist = torch.norm(dist, 2, dim=3)
 
+
     min_dist, min_indice = torch.min(dist, dim=2)
     dist_scalar = torch.sum(min_dist)
 
