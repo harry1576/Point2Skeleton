@@ -124,8 +124,6 @@ def sphere_points(spines):
     print("r")
     print(skel_gt_radius)   
     print("yeet")
-    
-    
 
     
     sample_centers = torch.repeat_interleave(skel_gt_xyz, 8, dim=1)
@@ -181,33 +179,32 @@ if __name__ == "__main__":
     args = parse_args()
     
     
-    #Get Stereo Meshes
-    """
+    # Stereo Meshes (noisey input)
     for folder in glob(args.pcd_read_dir + "/*"):  # Copy point clouds over from read directory and convert into ply ascii 
         if not os.path.isdir(args.data_write_dir+"/"+folder.split("/")[-1]):
           os.mkdir(args.data_write_dir+"/"+folder.split("/")[-1], 0o755)
           pcd = o3d.io.read_point_cloud(f"{folder}/back_close/scan_file_integrated.pcd")
           #pcd = pcd.voxel_down_sample(voxel_size=0.01)
           o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
-    """
+    
     
 
-    
+    #Surface points of ground truth point cloud
     for folder in glob(args.tree_dir + "/*"):   
         print(folder)  
         tree = to_structs(np.load(str(folder), allow_pickle=True).item())
         parts = flatten_parts(tree.parts)
         spines = [part.spine for part in parts if part.class_name != 'Node']           
-        
         points = sphere_points(spines)
-        
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
+        o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
+
         
-        vis = o3d.visualization.VisualizerWithKeyCallback()
-        vis.create_window()
-        vis.add_geometry(pcd)
-        vis.run()
+        #vis = o3d.visualization.VisualizerWithKeyCallback()
+        #vis.create_window()
+        #vis.add_geometry(pcd)
+        #vis.run()
         
         
         #point = points.reshape(3,-1)
@@ -221,7 +218,6 @@ if __name__ == "__main__":
         
         #pcd = meshes.sample_points_uniformly(number_of_points=2500)
         #o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
-
         #o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
         #vis = o3d.visualization.VisualizerWithKeyCallback()
         #vis.create_window()
