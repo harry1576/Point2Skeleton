@@ -102,16 +102,33 @@ class SkelPointNet(nn.Module):
 
         self.cvx_weights_mlp = nn.Sequential(*cvx_weights_modules)
 
-    def compute_loss(self,shape_xyz,skel_xyz):
+
+    def compute_loss(self,gt_xyz,skel_xyz,skel_r):
+        bn = skel_xyz.size()[0]
+        shape_pnum = float(gt_xyz.size()[1])
+        skel_pnum = float(skel_xyz.size()[1])
         
-        cd1 = DF.closest_distance_with_batch(shape_xyz, skel_xyz)
-        cd2 = DF.closest_distance_with_batch(skel_xyz, shape_xyz)
-
-        loss_cd = cd1 + cd2
-        loss_cd = loss_cd * 0.0001
-        return loss_cd
+        print(shape_pnum)
+        print(skel_pnum)
 
 
+        # sampling loss
+        e = 0.57735027
+        sample_directions = torch.tensor(
+            [[e, e, e], [e, e, -e], [e, -e, e], [e, -e, -e], [-e, e, e], [-e, e, -e], [-e, -e, e], [-e, -e, -e]])
+        sample_directions = torch.unsqueeze(sample_directions, 0)
+        sample_directions = sample_directions.repeat(bn, int(skel_pnum), 1).cuda()
+        sample_centers = torch.repeat_interleave(skel_xyz, 8, dim=1)
+        sample_radius = torch.repeat_interleave(skel_r, 8, dim=1)
+        sample_xyz = sample_centers + sample_radius * sample_directions
+
+        cd_sample1 = DF.closest_distance_with_batch(sample_xyz, gt_xyz) / (skel_pnum * 8)
+        cd_sample2 = DF.closest_distance_with_batch(gt_xyz, sample_xyz) / (shape_pnum)
+        loss_sample = cd_sample1 + cd_sample2
+
+ 
+
+        return loss_sample * 0.0001
 
 
     def get_smoothness_loss(self, skel_xyz, A, k=6):

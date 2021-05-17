@@ -19,8 +19,8 @@ def parse_args():
                         help='file of the names of the point clouds')
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
-    parser.add_argument('--point_num', type=int, default=600000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=100, help='output skeletal point number')
+    parser.add_argument('--point_num', type=int, default=36000, help='input point number')
+    parser.add_argument('--skelpoint_num', type=int, default=200, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--save_net_path', type=str, default='../training-weights/',
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     iter = -1
     total_epoch = conf.PRE_TRAIN_EPOCH + conf.SKELPOINT_TRAIN_EPOCH + conf.GAE_TRAIN_EPOCH
     
-    for epoch in range(total_epoch):
+    for epoch in range(conf.EPOCH):
         for k, batch_data in enumerate(train_loader):
             iter += 1
             print('epoch, iter:', epoch, iter)
