@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
     parser.add_argument('--point_num', type=int, default=36000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=200, help='output skeletal point number')
+    parser.add_argument('--skelpoint_num', type=int, default=5400, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--save_net_path', type=str, default='../training-weights/',

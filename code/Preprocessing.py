@@ -173,6 +173,9 @@ def sphere_points(spines):
     return [o3d.geometry.TriangleMesh.create_sphere(radius=spine.radius[i], resolution=6).translate(spine.points[i]) for i in points]
 
 
+def get_random_points(array, number_of_points):
+    return array[np.random.randint(len(array), size=(number_of_points))]
+
 
 if __name__ == "__main__":  
 
@@ -182,11 +185,28 @@ if __name__ == "__main__":
     # Stereo Meshes (noisey input)
     for folder in glob(args.pcd_read_dir + "/*"):  # Copy point clouds over from read directory and convert into ply ascii 
         if not os.path.isdir(args.data_write_dir+"/"+folder.split("/")[-1]):
+            
+
+            
           os.mkdir(args.data_write_dir+"/"+folder.split("/")[-1], 0o755)
           pcd = o3d.io.read_point_cloud(f"{folder}/back_close/scan_file_integrated.pcd")
+          vis = o3d.visualization.VisualizerWithKeyCallback()
+          vis.create_window()
+          vis.add_geometry(pcd)
+          vis.run()
+          
           #pcd = pcd.voxel_down_sample(voxel_size=0.01)
+
+          pcd.points =  o3d.utility.Vector3dVector(get_random_points(np.asarray(pcd.points),600000))
           o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
-    
+          
+          vis = o3d.visualization.VisualizerWithKeyCallback()
+          vis.create_window()
+          vis.add_geometry(pcd)
+          vis.run()
+          
+
+        
     
 
     #Surface points of ground truth point cloud
@@ -198,13 +218,14 @@ if __name__ == "__main__":
         points = sphere_points(spines)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
+        print(len(pcd.points))
         o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
 
         
-        #vis = o3d.visualization.VisualizerWithKeyCallback()
-        #vis.create_window()
-        #vis.add_geometry(pcd)
-        #vis.run()
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.create_window()
+        vis.add_geometry(pcd)
+        vis.run()
         
         
         #point = points.reshape(3,-1)
