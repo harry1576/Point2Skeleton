@@ -54,29 +54,37 @@ def key_points(spine):
 
 
 def sphere_points(spine):
-    
-    
+    """ Takes spines and outputs a np array of xyz coordinates"""
     points = key_points(spine)
-    e = 0.57735027
-    sample_directions = torch.tensor([[e, e, e], [e, e, -e], [e, -e, e], [e, -e, -e], [-e, e, e], [-e, e, -e], [-e, -e, e], [-e, -e, -e]]).double()
-    #sample_directions = torch.unsqueeze(sample_directions, 0)
-    #sample_directions = sample_directions.repeat(1, len(points)).cuda()
-    
-    
-    skel_gt_xyz = torch.as_tensor([spine.points[i] for i in points])
-    skel_gt_radius =  torch.as_tensor([spine.radius[i] for i in points])
-    
-    skel_gt_radius = torch.repeat_interleave(skel_gt_radius, 3, dim=0).reshape(-1,3)
+    return [o3d.geometry.TriangleMesh.create_sphere(radius=spine.radius[i], resolution=6).translate(spine.points[i]) for i in points]
 
+    return [(spine.points[i],spine.radius[i]) for i in points]
+
+    surface_points = []
     
-    sample_points = skel_gt_xyz.double() + skel_gt_radius.double() # add radius to each point
-    sample_points = torch.repeat_interleave(sample_points, 8, dim=0).reshape(len(points),8,-1)
-    sample_points = sample_points * sample_directions
+    for spine in spines:
     
-    #print(sample_points)
-   
-   
-    return sample_points
+        points = key_points(spine)
+        e = 0.57735027
+        sample_directions = torch.tensor([[e, e, e], [e, e, -e], [e, -e, e], [e, -e, -e], [-e, e, e], [-e, e, -e], [-e, -e, e], [-e, -e, -e]]).double()   
+        
+        skel_gt_xyz = torch.as_tensor([spine.points[i] for i in points])
+        skel_gt_radius =  torch.as_tensor([spine.radius[i] for i in points])
+        skel_gt_radius = torch.repeat_interleave(skel_gt_radius, 3, dim=0).reshape(-1,3)
+
+        sample_points = skel_gt_xyz.double() + skel_gt_radius.double() # add radius to each point
+        sample_points = torch.repeat_interleave(sample_points, 8, dim=0).reshape(len(points),8,-1) 
+        sample_points = sample_points * sample_directions
+        sample_points = sample_points.reshape(-1,3)
+        
+        
+        surface_points = np.append(surface_points,sample_points.numpy())
+        
+        
+    surface_points = np.reshape(surface_points,(-1,3))
+    #surface_points.extend(list(sample_points.numpy()))
+    #print(surface_points)
+    return surface_points
 
     #print(skel_gt_xyz)
     print("xyz")
@@ -127,10 +135,9 @@ def sphere_points(spine):
     #print(xyzr)
     #print([(spine.points[i],spine.radius[i]) for i in points])
     #return [spine.points[i] for i in points], [spine.radius[i] for i in points]
-    #return [(spine.points[i],spine.radius[i]) for i in points]
     
-
-    #return [o3d.geometry.TriangleMesh.create_sphere(radius=spine.radius[i], resolution=6).translate(spine.points[i]) for i in points]
+    
+    return [o3d.geometry.TriangleMesh.create_sphere(radius=spine.radius[i], resolution=6).translate(spine.points[i]) for i in points]
 
 
 if __name__ == "__main__":  
@@ -148,19 +155,28 @@ if __name__ == "__main__":
           o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
     """
     
-    
-    
+
+    """
     for folder in glob(args.tree_dir + "/*"):   
         print(folder)  
         tree = to_structs(np.load(str(folder), allow_pickle=True).item())
         parts = flatten_parts(tree.parts)
-        spines = [part.spine for part in parts if part.class_name != 'Node']     
+        spines = [part.spine for part in parts if part.class_name != 'Node']           
         
-        #[print(sphere_points(spine)) for spine in spines]
+        points = sphere_points(spines)
         
-        points = [reduce_add(sphere_points(spine)) for spine in spines]
-        print('ye')
-        print(points)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points)
+        
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.create_window()
+        vis.add_geometry(pcd)
+        vis.run()
+        
+        
+        #point = points.reshape(3,-1)
+         #print('ye')
+        #print(points)
         
         #meshes = reduce_add(points)
         #meshes.compute_vertex_normals()
@@ -177,10 +193,10 @@ if __name__ == "__main__":
         #vis.run()
     
     
-    
+    """
     
     # Skel point cloud   
-    """
+    
     for folder in glob(args.tree_dir + "/*"):   
         print(folder)  
         tree = to_structs(np.load(str(folder), allow_pickle=True).item())
@@ -193,11 +209,11 @@ if __name__ == "__main__":
         o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
 
         #o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
-        #vis = o3d.visualization.VisualizerWithKeyCallback()
-        #vis.create_window()
-        #vis.add_geometry(pcd)
-        #vis.run()
-    """
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.create_window()
+        vis.add_geometry(pcd)
+        vis.run()
+    
 
     
     
