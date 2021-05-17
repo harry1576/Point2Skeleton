@@ -15,11 +15,11 @@ import config as conf
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Point2Skeleton')
-    parser.add_argument('--pc_list_file', type=str, default='../data/data-split/all-train.txt',
+    parser.add_argument('--pc_list_file', type=str, default='../data/data-split/train.txt',
                         help='file of the names of the point clouds')
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
-    parser.add_argument('--point_num', type=int, default=2000, help='input point number')
+    parser.add_argument('--point_num', type=int, default=600000, help='input point number')
     parser.add_argument('--skelpoint_num', type=int, default=100, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
@@ -45,7 +45,7 @@ def halve_learning_rate(optimizer, check_point, current_epoch, lr_init):
             param_group['lr'] = lr
 
 
-def output_results(log_path, batch_id, epoch, input_xyz, skel_xyz, skel_r, A_init=None, A_final=None):
+def output_results(log_path, batch_id, epoch, input_xyz, skel_xyz, skel_r, A_init=None, A_final=None):    
     batch_size = skel_xyz.size()[0]
     batch_id = batch_id.numpy()
     input_xyz_save = input_xyz.detach().cpu().numpy()
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     rw.check_and_create_dirs([save_net_path, save_log_path, save_result_path])
 
     #intialize networks
-    model_skel = SkelPointNet(num_skel_points=skelpoint_num, input_channels=0, use_xyz=True)
+    model_skel = SkelPointNet(num_skel_points=skelpoint_num, input_channels=0, use_xyz=True) #Probably need to make skelpoint_num dynamic
     #model_gae = LinkPredNet()
     optimizer_skel = torch.optim.Adam(model_skel.parameters(), lr=conf.LR_SPN)
     #optimizer_gae = torch.optim.Adam(model_gae.parameters(), lr=conf.LR_GAE)
@@ -125,23 +125,24 @@ if __name__ == "__main__":
         for k, batch_data in enumerate(train_loader):
             iter += 1
             print('epoch, iter:', epoch, iter)
-            
-            batch_id, batch_pc = batch_data
+            #print(len(batch_data))
+            batch_id, batch_pc, batch_skel_gt = batch_data
             batch_id = batch_id
+            
             batch_pc = batch_pc.cuda().float()
-
+            batch_skel_gt = batch_skel_gt.cuda().float()
 
             if epoch < conf.EPOCH:
 
                 print('######### Training #########')
                 skel_xyz, skel_r, shape_features = model_skel(batch_pc, compute_graph=False)
-                loss_pre = model_skel.compute_loss_pre(batch_pc, skel_xyz)
-
+                loss = model_skel.compute_loss(batch_skel_gt, skel_xyz, skel_r)
+                print(loss)
                 optimizer_skel.zero_grad()
-                loss_pre.backward()
+                loss.backward()
                 optimizer_skel.step()
 
-                tb_writer.add_scalar('SkeletonPoint/loss_pre', loss_pre.item(), iter)
+                tb_writer.add_scalar('SkeletonPoint/loss_pre', loss.item(), iter)
                 if iter % save_result_iter == 0:
                     output_results(save_result_path, batch_id, epoch, batch_pc, skel_xyz, skel_r)
                 if iter % save_net_iter == 0:

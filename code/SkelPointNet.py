@@ -102,44 +102,17 @@ class SkelPointNet(nn.Module):
 
         self.cvx_weights_mlp = nn.Sequential(*cvx_weights_modules)
 
-    def compute_loss(self, shape_xyz, skel_xyz, skel_radius, A, w1, w2, w3=0, lap_reg=False):
-        bn = skel_xyz.size()[0]
-        shape_pnum = float(shape_xyz.size()[1])
-        skel_pnum = float(skel_xyz.size()[1])
-
-        # sampling loss
-        e = 0.57735027
-        sample_directions = torch.tensor(
-            [[e, e, e], [e, e, -e], [e, -e, e], [e, -e, -e], [-e, e, e], [-e, e, -e], [-e, -e, e], [-e, -e, -e]])
-        sample_directions = torch.unsqueeze(sample_directions, 0)
-        sample_directions = sample_directions.repeat(bn, int(skel_pnum), 1).cuda()
-        sample_centers = torch.repeat_interleave(skel_xyz, 8, dim=1)
-        sample_radius = torch.repeat_interleave(skel_radius, 8, dim=1)
-        sample_xyz = sample_centers + sample_radius * sample_directions
-
-        cd_sample1 = DF.closest_distance_with_batch(sample_xyz, shape_xyz) / (skel_pnum * 8)
-        cd_sample2 = DF.closest_distance_with_batch(shape_xyz, sample_xyz) / (shape_pnum)
-        loss_sample = cd_sample1 + cd_sample2
-
-        # point2sphere loss
-        skel_xyzr = torch.cat((skel_xyz, skel_radius), 2)
-        cd_point2pshere1 = DF.point2sphere_distance_with_batch(shape_xyz, skel_xyzr) / shape_pnum
-        cd_point2sphere2 = DF.sphere2point_distance_with_batch(skel_xyzr, shape_xyz) / skel_pnum
-        loss_point2sphere = cd_point2pshere1 + cd_point2sphere2
-
-        # radius loss
-        loss_radius = - torch.sum(skel_radius) / skel_pnum
-
-        # Laplacian smoothness loss
-        loss_smooth = 0
-        if lap_reg:
-            loss_smooth = self.get_smoothness_loss(skel_xyzr, A) / skel_pnum
-
-        # loss combination
-        final_loss = loss_sample + loss_point2sphere * w1 + loss_radius * w2 + loss_smooth * w3
-
-        return final_loss
+    def compute_loss(self,shape_xyz,skel_xyz):
         
+        cd1 = DF.closest_distance_with_batch(shape_xyz, skel_xyz)
+        cd2 = DF.closest_distance_with_batch(skel_xyz, shape_xyz)
+
+        loss_cd = cd1 + cd2
+        loss_cd = loss_cd * 0.0001
+        return loss_cd
+
+
+
 
     def get_smoothness_loss(self, skel_xyz, A, k=6):
 
@@ -239,3 +212,45 @@ class SkelPointNet(nn.Module):
             return skel_xyz, skel_r, sample_xyz, weights, shape_cmb_features, A, valid_Mask, known_Mask
         else:
             return skel_xyz, skel_r, shape_cmb_features
+
+
+
+"""
+    def compute_loss(self, shape_xyz, skel_xyz, skel_radius, A, w1, w2, w3=0, lap_reg=False):
+        bn = skel_xyz.size()[0]
+        shape_pnum = float(shape_xyz.size()[1])
+        skel_pnum = float(skel_xyz.size()[1])
+
+        # sampling loss
+        e = 0.57735027
+        sample_directions = torch.tensor(
+            [[e, e, e], [e, e, -e], [e, -e, e], [e, -e, -e], [-e, e, e], [-e, e, -e], [-e, -e, e], [-e, -e, -e]])
+        sample_directions = torch.unsqueeze(sample_directions, 0)
+        sample_directions = sample_directions.repeat(bn, int(skel_pnum), 1).cuda()
+        sample_centers = torch.repeat_interleave(skel_xyz, 8, dim=1)
+        sample_radius = torch.repeat_interleave(skel_radius, 8, dim=1)
+        sample_xyz = sample_centers + sample_radius * sample_directions
+
+        cd_sample1 = DF.closest_distance_with_batch(sample_xyz, shape_xyz) / (skel_pnum * 8)
+        cd_sample2 = DF.closest_distance_with_batch(shape_xyz, sample_xyz) / (shape_pnum)
+        loss_sample = cd_sample1 + cd_sample2
+
+        # point2sphere loss
+        skel_xyzr = torch.cat((skel_xyz, skel_radius), 2)
+        cd_point2pshere1 = DF.point2sphere_distance_with_batch(shape_xyz, skel_xyzr) / shape_pnum
+        cd_point2sphere2 = DF.sphere2point_distance_with_batch(skel_xyzr, shape_xyz) / skel_pnum
+        loss_point2sphere = cd_point2pshere1 + cd_point2sphere2
+
+        # radius loss
+        loss_radius = - torch.sum(skel_radius) / skel_pnum
+
+        # Laplacian smoothness loss
+        loss_smooth = 0
+        if lap_reg:
+            loss_smooth = self.get_smoothness_loss(skel_xyzr, A) / skel_pnum
+
+        # loss combination
+        final_loss = loss_sample + loss_point2sphere * w1 + loss_radius * w2 + loss_smooth * w3
+
+        return final_loss
+"""       

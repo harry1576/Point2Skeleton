@@ -14,9 +14,9 @@ class PCDataset(Dataset):
         self.point_num = point_num
 
     def __getitem__(self, index):
+       
         data_pc = rw.load_ply_points(self.data_folder + self.data_id[index] + '.ply', expected_point=self.point_num)
-        data_pc_skel = rw.load_ply_points(self.data_folder + self.data_id[index] + '.ply', expected_point=self.point_num)
-
+        data_pc_skel = rw.load_ply_points(self.data_folder + self.data_id[index] + '_skel.ply', expected_point=self.point_num)
         return index, data_pc, data_pc_skel
 
     def __len__(self):
