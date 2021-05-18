@@ -18,23 +18,7 @@ class SkelPointNet(nn.Module):
         self.input_channels = input_channels
         self.SA_modules = nn.ModuleList()
 
-                
-        self.SA_modules.append(
-            PointnetSAModuleMSG(
-                npoint=4096,
-                radii=[0.025, 0.05],
-                nsamples=[4, 8],
-                mlps=[
-                    [input_channels, 4, 4, 8],
-                    [input_channels, 4, 4, 8]
-                ],
-                use_xyz=use_xyz,
-            )
-        )
-
-        input_channels = 8 + 8
-
-        
+        """
         self.SA_modules.append(
             PointnetSAModuleMSG(
                 npoint=2048,
@@ -49,8 +33,8 @@ class SkelPointNet(nn.Module):
         )
 
         input_channels = 16 + 16
+        """
         
-
         self.SA_modules.append(
             PointnetSAModuleMSG(
                 npoint=1024,
@@ -105,9 +89,32 @@ class SkelPointNet(nn.Module):
                 use_xyz=use_xyz,
             )
         )
-
         input_channels = 256 + 256
+        """
+        self.SA_modules.append(
+            PointnetSAModuleMSG(
+                npoint=512,
+                radii=[0.8, 1.0],
+                nsamples=[128, 256],
+                mlps=[
+                    [input_channels, 256, 256, 512],
+                    [input_channels, 256, 256, 512]
+                ],
+                use_xyz=use_xyz,
+            )
+        )
+               
+        input_channels = 512 + 512
         cvx_weights_modules = []
+        
+        cvx_weights_modules.append(nn.Dropout(0.2))
+        cvx_weights_modules.append(nn.Conv1d(in_channels=input_channels, out_channels=768, kernel_size=1))
+        cvx_weights_modules.append(nn.BatchNorm1d(768))
+        cvx_weights_modules.append(nn.ReLU(inplace=True))
+        """
+        
+        cvx_weights_modules = []
+
 
         cvx_weights_modules.append(nn.Dropout(0.2))
         cvx_weights_modules.append(nn.Conv1d(in_channels=input_channels, out_channels=384, kernel_size=1))
@@ -136,6 +143,9 @@ class SkelPointNet(nn.Module):
         self.cvx_weights_mlp = nn.Sequential(*cvx_weights_modules)
 
 
+    def knn_loss(self, batch_skel_gt, skel_xyz):
+        return (DF.knn_with_batch(skel_xyz,batch_skel_gt, 8,sum_closet = True))
+    
     def compute_loss(self,gt_xyz,skel_xyz,skel_r):
 
         bn = skel_xyz.size()[0]
@@ -160,8 +170,8 @@ class SkelPointNet(nn.Module):
         cd_sample2 = DF.closest_distance_with_batch(gt_xyz, sample_xyz) / (shape_pnum)
         loss_sample = cd_sample1 + cd_sample2
 
- 
-
+        loss_sample = DF.closest_distance_with_batch(gt_xyz, skel_xyz) + DF.closest_distance_with_batch(skel_xyz,gt_xyz)
+        print(loss_sample)
         return loss_sample * 0.01
 
 
@@ -170,7 +180,7 @@ class SkelPointNet(nn.Module):
         bn, pn, p_dim = skel_xyz.size()[0], skel_xyz.size()[1], skel_xyz.size()[2]
 
         if A is None:
-            knn_min = DF.knn_with_batch(skel_xyz, skel_xyz, k, is_max=False)
+            knn_min = DF.knn_with_batch(skel_xyz, skel_xyz, k, is_max=False, sum_closet= False)
             A = torch.zeros((bn, pn, pn)).float().cuda()
             for i in range(bn):
                 for j in range(pn):
@@ -202,8 +212,8 @@ class SkelPointNet(nn.Module):
 
         bn, pn = skel_xyz.size()[0], skel_xyz.size()[1]
 
-        knn_skel = DF.knn_with_batch(skel_xyz, skel_xyz, pn, is_max=False)
-        knn_sp2sk = DF.knn_with_batch(shape_xyz, skel_xyz, 3, is_max=False)
+        knn_skel = DF.knn_with_batch(skel_xyz, skel_xyz, pn, is_max=False,sum_closet = False)
+        knn_sp2sk = DF.knn_with_batch(shape_xyz, skel_xyz, 3, is_max=False,sum_closet = False)
 
         A = torch.zeros((bn, pn, pn)).float().cuda()
 

@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
     parser.add_argument('--point_num', type=int, default=30000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=300, help='output skeletal point number')
+    parser.add_argument('--skelpoint_num', type=int, default=600, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--save_net_path', type=str, default='../training-weights/',
@@ -136,7 +136,13 @@ if __name__ == "__main__":
 
                 print('######### Training #########')
                 skel_xyz, skel_r, shape_features = model_skel(batch_pc, compute_graph=False)
-                loss = model_skel.compute_loss(batch_skel_gt, skel_xyz, skel_r)
+                
+                loss = model_skel.knn_loss(batch_skel_gt, skel_xyz)
+                
+                #loss = model_skel.compute_loss_pre(batch_skel_gt, skel_xyz)
+                
+                loss = model_skel.compute_loss_pre(batch_skel_gt, skel_xyz)
+                
                 print(loss)
                 optimizer_skel.zero_grad()
                 loss.backward()

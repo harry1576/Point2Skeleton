@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
     parser.add_argument('--point_num', type=str, default=30000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=300, help='output skeletal point number')
+    parser.add_argument('--skelpoint_num', type=int, default=600, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--load_skelnet_path', type=str,
@@ -107,8 +107,8 @@ if __name__ == "__main__":
         batch_pc = batch_pc.cuda().float()
 
         # get skeletal points and the node features
-        skel_xyz, skel_r, sample_xyz, weights, shape_features, A_init, valid_mask, known_mask = model_skel(
-            batch_pc, compute_graph=True)
+        skel_xyz, skel_r, sample_xyz  = model_skel(
+            batch_pc, compute_graph=False)
         
         
         skel_node_features = torch.cat([shape_features, skel_xyz, skel_r], 2)

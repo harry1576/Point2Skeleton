@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-def knn_with_batch(p1, p2, k, is_max=False):
+def knn_with_batch(p1, p2, k, is_max=False, sum_closet = True):
     '''
     :param p1: size[B,N,D]
     :param p2: size[B,M,D]
@@ -10,6 +10,10 @@ def knn_with_batch(p1, p2, k, is_max=False):
     :param is_max: k-nearest neighbors or k-farthest neighbors
     :return: for each point in p1, returns the indices of the k nearest points in p2; size[B,N,k]
     '''
+    
+    print(p1.shape)
+    print(p2.shape)
+    
     assert p1.size(0) == p2.size(0) and p1.size(2) == p2.size(2)
 
     p1 = p1.unsqueeze(1)
@@ -20,10 +24,17 @@ def knn_with_batch(p1, p2, k, is_max=False):
     p2 = p2.repeat(1, p1.size(1), 1, 1)
 
     dist = torch.add(p1, torch.neg(p2))
-    dist = torch.norm(dist, 2, dim=3)
+    #dist = torch.norm(dist, 2, dim=3)
 
     top_dist, k_nn = torch.topk(dist, k, dim=2, largest=is_max)
 
+    if sum_closet is True:
+
+        #print(top_dist)
+        #print(top_dist.shape)
+        #quit()
+        return torch.sum(top_dist)
+    
     return k_nn
 
 
