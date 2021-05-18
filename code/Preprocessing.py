@@ -193,7 +193,7 @@ if __name__ == "__main__":
           random_sample = get_random_points(np.asarray(pcd.points),30000)
           norm = np.linalg.norm(random_sample)
           norm_random_sample = random_sample / norm
-          pcd.points =  o3d.utility.Vector3dVector(random_sample)
+          pcd.points =  o3d.utility.Vector3dVector(pcd.points)
           o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
 
           vis = o3d.visualization.VisualizerWithKeyCallback()
