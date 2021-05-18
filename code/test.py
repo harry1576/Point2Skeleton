@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import torch
 import argparse
@@ -15,16 +16,16 @@ import config as conf
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Point2Skeleton')
-    parser.add_argument('--pc_list_file', type=str, default='../data/data-split/all-test.txt',
+    parser.add_argument('--pc_list_file', type=str, default='../data/data-split/test.txt',
                         help='file of the names of the point clouds')
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
-    parser.add_argument('--point_num', type=str, default=2000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=100, help='output skeletal point number')
+    parser.add_argument('--point_num', type=str, default=30000, help='input point number')
+    parser.add_argument('--skelpoint_num', type=int, default=300, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--load_skelnet_path', type=str,
-                        default='../weights/weights-skelpoint.pth',
+                        default='../weights/test.pth',
                         help='directory to load the skeletal point network parameters')
     parser.add_argument('--load_gae_path', type=str,
                         default='../weights/weights-gae.pth',
@@ -101,13 +102,15 @@ if __name__ == "__main__":
     data_loader = DataLoader(dataset=test_data, batch_size=1, shuffle=False, drop_last=False)
     for iter, batch_data in enumerate(data_loader):
         print('iter:', iter)
-        batch_id, batch_pc = batch_data
+        batch_id, batch_pc, batch_skel_gt = batch_data
         batch_id = batch_id
         batch_pc = batch_pc.cuda().float()
 
         # get skeletal points and the node features
         skel_xyz, skel_r, sample_xyz, weights, shape_features, A_init, valid_mask, known_mask = model_skel(
             batch_pc, compute_graph=True)
+        
+        
         skel_node_features = torch.cat([shape_features, skel_xyz, skel_r], 2)
 
         

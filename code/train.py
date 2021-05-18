@@ -19,19 +19,19 @@ def parse_args():
                         help='file of the names of the point clouds')
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
-    parser.add_argument('--point_num', type=int, default=36000, help='input point number')
-    parser.add_argument('--skelpoint_num', type=int, default=5400, help='output skeletal point number')
+    parser.add_argument('--point_num', type=int, default=30000, help='input point number')
+    parser.add_argument('--skelpoint_num', type=int, default=300, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('--save_net_path', type=str, default='../training-weights/',
                         help='directory to save the network parameters')
-    parser.add_argument('--save_net_iter', type=int, default=1000,
+    parser.add_argument('--save_net_iter', type=int, default=10,
                         help='frequency to save the network parameters (number of iteration)')
     parser.add_argument('--save_log_path', type=str, default='../tensorboard/',
                         help='directory to save the training log (tensorboard)')
     parser.add_argument('--save_result_path', type=str, default='../log/',
                         help='directory to save the temporary results during training')
-    parser.add_argument('--save_result_iter', type=int, default=1000,
+    parser.add_argument('--save_result_iter', type=int, default=10,
                         help='frequency to save the intermediate results (number of iteration)')
     args = parser.parse_args()
 

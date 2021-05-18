@@ -8,7 +8,7 @@ import DistFunc as DF
 
 
 class SkelPointNet(nn.Module):
-
+    
     def __init__(self, num_skel_points, input_channels=3, use_xyz=True):
 
         super(SkelPointNet, self).__init__()
@@ -17,6 +17,39 @@ class SkelPointNet(nn.Module):
 
         self.input_channels = input_channels
         self.SA_modules = nn.ModuleList()
+
+                
+        self.SA_modules.append(
+            PointnetSAModuleMSG(
+                npoint=4096,
+                radii=[0.025, 0.05],
+                nsamples=[4, 8],
+                mlps=[
+                    [input_channels, 4, 4, 8],
+                    [input_channels, 4, 4, 8]
+                ],
+                use_xyz=use_xyz,
+            )
+        )
+
+        input_channels = 8 + 8
+
+        
+        self.SA_modules.append(
+            PointnetSAModuleMSG(
+                npoint=2048,
+                radii=[0.05, 0.1],
+                nsamples=[8, 16],
+                mlps=[
+                    [input_channels, 8, 8, 16],
+                    [input_channels, 8, 8, 16]
+                ],
+                use_xyz=use_xyz,
+            )
+        )
+
+        input_channels = 16 + 16
+        
 
         self.SA_modules.append(
             PointnetSAModuleMSG(
@@ -118,8 +151,8 @@ class SkelPointNet(nn.Module):
         sample_radius = torch.repeat_interleave(skel_r, 8, dim=1)
         sample_xyz = sample_centers + sample_radius * sample_directions
         
-        print(sample_xyz)
-        print(gt_xyz)
+        #print(sample_xyz)
+        #print(gt_xyz)
         #quit()
         
         
@@ -129,7 +162,7 @@ class SkelPointNet(nn.Module):
 
  
 
-        return loss_sample * 0.0001
+        return loss_sample * 0.01
 
 
     def get_smoothness_loss(self, skel_xyz, A, k=6):
