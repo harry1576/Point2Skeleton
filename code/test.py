@@ -1,3 +1,6 @@
+import open3d as o3d
+
+
 import os
 import sys
 import numpy as np
@@ -20,7 +23,7 @@ def parse_args():
                         help='file of the names of the point clouds')
     parser.add_argument('--data_root', type=str, default='../data/pointclouds/',
                         help='root directory of all the data')
-    parser.add_argument('--point_num', type=str, default=30000, help='input point number')
+    parser.add_argument('--point_num', type=str, default=100000, help='input point number')
     parser.add_argument('--skelpoint_num', type=int, default=600, help='output skeletal point number')
 
     parser.add_argument('--gpu', type=str, default='0', help='which gpu to use')
@@ -107,19 +110,25 @@ if __name__ == "__main__":
         batch_pc = batch_pc.cuda().float()
 
         # get skeletal points and the node features
-        skel_xyz, skel_r, sample_xyz  = model_skel(
-            batch_pc, compute_graph=False)
+        skel_xyz, skel_r, sample_xyz, weights, shape_features, A_init, valid_mask, known_mask = model_skel(
+            batch_pc, compute_graph=True)
+        
+        
+        pcd = o3d.geometry.PointCloud()
+        print(skel_xyz.shape)
+        pcd.points = o3d.utility.Vector3dVector(skel_xyz.reshape(-1,3).cpu().detach().numpy())
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.create_window()
+        vis.add_geometry(pcd)
+        vis.run()
+        quit()
         
         
         skel_node_features = torch.cat([shape_features, skel_xyz, skel_r], 2)
 
-        
         # get predicted mesh
         A_pred = model_gae(skel_node_features, A_init)
         A_final = model_gae.recover_A(A_pred, valid_mask)
-
-        #print(sample_xyz)
-        #print(sample_xyz.shape)
 
         skel_faces, skel_edges, A_mesh = util.generate_skel_mesh(batch_pc, skel_xyz, A_init, A_final)
         skel_r = util.refine_radius_by_mesh(skel_xyz, skel_r, sample_xyz, weights, skel_faces, skel_edges)

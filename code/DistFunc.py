@@ -2,6 +2,33 @@ import torch
 import numpy as np
 
 
+
+
+def knn_with_batch(p1, p2, k, is_max=False):
+    '''
+    :param p1: size[B,N,D]
+    :param p2: size[B,M,D]
+    :param k: k nearest neighbors
+    :param is_max: k-nearest neighbors or k-farthest neighbors
+    :return: for each point in p1, returns the indices of the k nearest points in p2; size[B,N,k]
+    '''
+    assert p1.size(0) == p2.size(0) and p1.size(2) == p2.size(2)
+
+    p1 = p1.unsqueeze(1)
+    p2 = p2.unsqueeze(1)
+
+    p1 = p1.repeat(1, p2.size(2), 1, 1)
+    p1 = p1.transpose(1, 2)
+    p2 = p2.repeat(1, p1.size(1), 1, 1)
+
+    dist = torch.add(p1, torch.neg(p2))
+    dist = torch.norm(dist, 2, dim=3)
+
+    top_dist, k_nn = torch.topk(dist, k, dim=2, largest=is_max)
+
+    return k_nn
+
+"""
 def knn_with_batch(p1, p2, k, is_max=False, sum_closet = True):
     '''
     :param p1: size[B,N,D]
@@ -36,7 +63,7 @@ def knn_with_batch(p1, p2, k, is_max=False, sum_closet = True):
         return torch.sum(top_dist)
     
     return k_nn
-
+"""
 
 def distance_map_with_batch(p1, p2):
     '''

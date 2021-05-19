@@ -59,6 +59,15 @@ def sphere_points(spines):
     surface_points = []
     
     for spine in spines:
+        
+        points = key_points(spine)
+        
+    
+    
+    return 0
+    
+    
+    for spine in spines:
     
         points = key_points(spine)
         
@@ -193,13 +202,13 @@ if __name__ == "__main__":
           random_sample = get_random_points(np.asarray(pcd.points),30000)
           norm = np.linalg.norm(random_sample)
           norm_random_sample = random_sample / norm
-          pcd.points =  o3d.utility.Vector3dVector(pcd.points)
+          pcd.points =  o3d.utility.Vector3dVector(random_sample)
           o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
 
-          vis = o3d.visualization.VisualizerWithKeyCallback()
-          vis.create_window()
-          vis.add_geometry(pcd)
-          vis.run()
+          #vis = o3d.visualization.VisualizerWithKeyCallback()
+          #vis.create_window()
+          #vis.add_geometry(pcd)
+          #vis.run()
 
     #Surface points of ground truth point cloud
     for folder in glob(args.tree_dir + "/*"):   
@@ -214,7 +223,7 @@ if __name__ == "__main__":
         norm_point = points / norm
         
         pcd.points = o3d.utility.Vector3dVector(points)
-        print(len(pcd.points))
+        #print(len(pcd.points))
         o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
 
         
@@ -232,10 +241,10 @@ if __name__ == "__main__":
         #pcd = meshes.sample_points_uniformly(number_of_points=2500)
         #o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1][:-5]}/{folder.split('/')[-1][:-5]}_skel.ply", pcd, write_ascii=True,print_progress=True)
         #o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
-        vis = o3d.visualization.VisualizerWithKeyCallback()
-        vis.create_window()
-        vis.add_geometry(pcd)
-        vis.run()
+        #vis = o3d.visualization.VisualizerWithKeyCallback()
+        #vis.create_window()
+       # vis.add_geometry(pcd)
+       # vis.run()
     
     
     

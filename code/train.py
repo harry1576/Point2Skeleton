@@ -137,8 +137,6 @@ if __name__ == "__main__":
                 print('######### Training #########')
                 skel_xyz, skel_r, shape_features = model_skel(batch_pc, compute_graph=False)
                 
-                loss = model_skel.knn_loss(batch_skel_gt, skel_xyz)
-                
                 #loss = model_skel.compute_loss_pre(batch_skel_gt, skel_xyz)
                 
                 loss = model_skel.compute_loss_pre(batch_skel_gt, skel_xyz)

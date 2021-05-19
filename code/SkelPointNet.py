@@ -7,6 +7,7 @@ import copy
 import DistFunc as DF
 
 
+
 class SkelPointNet(nn.Module):
     
     def __init__(self, num_skel_points, input_channels=3, use_xyz=True):
@@ -79,7 +80,7 @@ class SkelPointNet(nn.Module):
         input_channels = 128 + 128
         self.SA_modules.append(
             PointnetSAModuleMSG(
-                npoint=512,
+                npoint=4096,
                 radii=[0.6, 0.8],
                 nsamples=[64, 128],
                 mlps=[
@@ -106,11 +107,7 @@ class SkelPointNet(nn.Module):
                
         input_channels = 512 + 512
         cvx_weights_modules = []
-        
-        cvx_weights_modules.append(nn.Dropout(0.2))
-        cvx_weights_modules.append(nn.Conv1d(in_channels=input_channels, out_channels=768, kernel_size=1))
-        cvx_weights_modules.append(nn.BatchNorm1d(768))
-        cvx_weights_modules.append(nn.ReLU(inplace=True))
+        )
         """
         
         cvx_weights_modules = []
@@ -209,11 +206,11 @@ class SkelPointNet(nn.Module):
         return loss_cd
 
     def init_graph(self, shape_xyz, skel_xyz, valid_k=8):
-
+    
         bn, pn = skel_xyz.size()[0], skel_xyz.size()[1]
 
-        knn_skel = DF.knn_with_batch(skel_xyz, skel_xyz, pn, is_max=False,sum_closet = False)
-        knn_sp2sk = DF.knn_with_batch(shape_xyz, skel_xyz, 3, is_max=False,sum_closet = False)
+        knn_skel = DF.knn_with_batch(skel_xyz, skel_xyz, pn, is_max=False)
+        knn_sp2sk = DF.knn_with_batch(shape_xyz, skel_xyz, 3, is_max=False)
 
         A = torch.zeros((bn, pn, pn)).float().cuda()
 
@@ -253,6 +250,8 @@ class SkelPointNet(nn.Module):
         for pointnet_module in self.SA_modules:
             xyz, features = pointnet_module(xyz, features)
         sample_xyz, context_features = xyz, features
+        
+        
 
         # convex combinational weights
         weights = self.cvx_weights_mlp(context_features)
@@ -270,7 +269,7 @@ class SkelPointNet(nn.Module):
 
         if compute_graph:
             A, valid_Mask, known_Mask = self.init_graph(input_pc[..., 0:3], skel_xyz)
-            return skel_xyz, skel_r, sample_xyz, weights, shape_cmb_features, A, valid_Mask, known_Mask
+            return sample_xyz, skel_r, sample_xyz, weights, shape_cmb_features, A, valid_Mask, known_Mask
         else:
             return skel_xyz, skel_r, shape_cmb_features
 
