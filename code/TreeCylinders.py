@@ -60,18 +60,24 @@ def sphere_points(spines):
     for spine in spines:
         for i in range(0,len(spine.points)-1):
        
-            direction_vector = (spine.points[i] - spine.points[i+1])
+       
+            a_vec = np.array(spine.points[i])/np.linalg.norm(np.array(spine.points[i]))
+            b_vec = np.array(spine.points[i+1])/np.linalg.norm(np.array(spine.points[i+1]))
 
-            xy_angle =  np.arctan2(direction_vector[0],direction_vector[1])           
-            xz_angle =  np.arctan2(direction_vector[0],direction_vector[2])           
-            yz_angle =  np.arctan2(direction_vector[1],direction_vector[2])           
+            cross = np.cross(a_vec, b_vec)
+            ab_angle = np.arccos(np.dot(a_vec,b_vec))
+
+
+            vx = np.array([[0,-cross[2],cross[1]],[cross[2],0,-cross[0]],[-cross[1],cross[0],0]])
+            R = np.identity(3)*np.cos(ab_angle) + (1-np.cos(ab_angle))*np.outer(cross,cross) + np.sin(ab_angle)*vx
+                                 
 
             height = np.linalg.norm(spine.points[i] - spine.points[i+1])
 
             mesh = o3d.geometry.TriangleMesh.create_cylinder(radius=spine.radius[i],height=height)
-            R = mesh.get_rotation_matrix_from_xyz((-yz_angle,xz_angle,-xy_angle))
+            #R = mesh.get_rotation_matrix_from_xyz((xy_angle,xz_angle,yz_angle))
             
-            mesh = mesh.rotate(R, center=(0, 0, 0))     
+            mesh.rotate(R, center=(0, 0, 0))     
             
             meshes.append(mesh.translate(spine.points[i]))
             
@@ -88,7 +94,22 @@ if __name__ == "__main__":
 
     args = parse_args()
     
+
+    for folder in glob(args.pcd_read_dir + "/*"):  # Copy point clouds over from read directory and convert into ply ascii 
+        if not os.path.isdir(args.data_write_dir+"/"+folder.split("/")[-1]):
+                    
+          os.mkdir(args.data_write_dir+"/"+folder.split("/")[-1], 0o755)
+          pcd = o3d.io.read_point_cloud(f"{folder}/back_close/scan_file_integrated.pcd")
+          #pcd = pcd.voxel_down_sample(voxel_size=0.01)
+
+          random_sample = get_random_points(np.asarray(pcd.points),30000)
+          norm = np.linalg.norm(random_sample)
+          norm_random_sample = random_sample / norm
+          pcd.points =  o3d.utility.Vector3dVector(random_sample)
+          o3d.io.write_point_cloud(f"{args.data_write_dir}/{folder.split('/')[-1]}/{folder.split('/')[-1]}.ply", pcd, write_ascii=True,print_progress=True)
     
+        
+        
     for folder in glob(args.tree_dir + "/*"):   
         tree = to_structs(np.load(str(folder), allow_pickle=True).item())
         parts = flatten_parts(tree.parts)
